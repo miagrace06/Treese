@@ -2,8 +2,8 @@
 #define TREESE_H
 
 #include <string>
-#include <cstddef> 
-#include <stdexcept> 
+#include <cstddef>
+#include <stdexcept>
 #include <iostream>
 
 class Treese {
@@ -12,13 +12,13 @@ private:
         bool is_leaf;
         size_t length;
         size_t height;
-        std::string data;
         Node* left;
         Node* right;
+        std::string data;
 
         Node(const std::string& str)
             : is_leaf(true), length(str.length()), height(1),
-              data(str), left(nullptr), right(nullptr) {}
+              left(nullptr), right(nullptr), data(str) {}
 
         Node(Node* l, Node* r)
             : is_leaf(false), left(l), right(r), data("") {
@@ -36,16 +36,16 @@ private:
 
     Node* root;
 
-    Node* copyTree(Node* node);
+    static Node* copyTree(Node* node);
     void printHelper(Node* node) const;
 
-    Node* balance(Node* node);
-    size_t getHeight(Node* node);
-    int getBalance(Node* node);
-    Node* rotateRight(Node* y);
-    Node* rotateLeft(Node* x);
-    void updateHeight(Node* node);
-    void updateLength(Node* node);
+    static Node* balance(Node* node);
+    static size_t getHeight(Node* node);
+    static int getBalance(Node* node);
+    static Node* rotateRight(Node* y);
+    static Node* rotateLeft(Node* x);
+    static void updateHeight(Node* node);
+    static void updateLength(Node* node);
 
 public:
     Treese();
