@@ -5,11 +5,7 @@
 Treese::Treese() : root(nullptr) {}
 
 Treese::Treese(const std::string& initial) {
-    if (initial.empty()) {
-        root = nullptr;
-    } else {
-        root = new Node(initial);
-    }
+    root = initial.empty() ? nullptr : new Node(initial);
 }
 
 Treese::Treese(const Treese& other) : root(copyTree(other.root)) {}
@@ -34,7 +30,7 @@ char Treese::at(size_t index) const {
     if (index >= length()) {
         throw std::out_of_range("Index out of range.");
     }
-    
+
     Node* current = root;
     while (!current->is_leaf) {
         size_t left_length = current->left ? current->left->length : 0;
@@ -45,6 +41,7 @@ char Treese::at(size_t index) const {
             current = current->right;
         }
     }
+
     return current->data[index];
 }
 
@@ -55,27 +52,25 @@ void Treese::print() const {
 
 Treese Treese::concat(const Treese& other) const {
     Treese result;
-    
-    if (!root && !other.root) {
-        return result;
-    } else if (!root) {
-        result.root = copyTree(other.root);
-    } else if (!other.root) {
-        result.root = copyTree(root);
-    } else {
-        Node* left_copy = copyTree(root);
-        Node* right_copy = copyTree(other.root);
-        result.root = new Node(left_copy, right_copy);
-        
-        result.root = balance(result.root);
-    }
-    
+
+    if (!root && !other.root) return result;
+    if (!root) return Treese(other);
+    if (!other.root) return Treese(*this);
+
+    Node* left_copy = copyTree(root);
+    Node* right_copy = copyTree(other.root);
+    result.root = new Node(left_copy, right_copy);
+
+    result.root = balance(result.root);
+    updateHeight(result.root);
+    updateLength(result.root);
+
     return result;
 }
 
 Treese::Node* Treese::copyTree(Node* node) {
     if (!node) return nullptr;
-    
+
     if (node->is_leaf) {
         return new Node(node->data);
     } else {
@@ -87,7 +82,7 @@ Treese::Node* Treese::copyTree(Node* node) {
 
 void Treese::printHelper(Node* node) const {
     if (!node) return;
-    
+
     if (node->is_leaf) {
         std::cout << node->data;
     } else {
@@ -101,8 +96,7 @@ size_t Treese::getHeight(Node* node) {
 }
 
 int Treese::getBalance(Node* node) {
-    if (!node) return 0;
-    return getHeight(node->left) - getHeight(node->right);
+    return node ? static_cast<int>(getHeight(node->left)) - static_cast<int>(getHeight(node->right)) : 0;
 }
 
 void Treese::updateHeight(Node* node) {
@@ -111,66 +105,74 @@ void Treese::updateHeight(Node* node) {
     }
 }
 
+void Treese::updateLength(Node* node) {
+    if (node && !node->is_leaf) {
+        node->length = (node->left ? node->left->length : 0) +
+                       (node->right ? node->right->length : 0);
+    }
+}
+
 Treese::Node* Treese::rotateRight(Node* y) {
     if (!y || !y->left) return y;
-    
+
     Node* x = y->left;
     Node* T2 = x->right;
-    
+
     x->right = y;
     y->left = T2;
-    
+
+    y->is_leaf = false;
+    x->is_leaf = false;
+
     updateHeight(y);
     updateHeight(x);
-    
-    y->length = (y->left ? y->left->length : 0) + (y->right ? y->right->length : 0);
-    x->length = (x->left ? x->left->length : 0) + (x->right ? x->right->length : 0);
-    
+    updateLength(y);
+    updateLength(x);
+
     return x;
 }
 
 Treese::Node* Treese::rotateLeft(Node* x) {
     if (!x || !x->right) return x;
-    
+
     Node* y = x->right;
     Node* T2 = y->left;
-    
+
     y->left = x;
     x->right = T2;
-    
+
+    x->is_leaf = false;
+    y->is_leaf = false;
+
     updateHeight(x);
     updateHeight(y);
-    
-    x->length = (x->left ? x->left->length : 0) + (x->right ? x->right->length : 0);
-    y->length = (y->left ? y->left->length : 0) + (y->right ? y->right->length : 0);
-    
+    updateLength(x);
+    updateLength(y);
+
     return y;
 }
 
 Treese::Node* Treese::balance(Node* node) {
     if (!node || node->is_leaf) return node;
-    
+
     updateHeight(node);
-    
+    updateLength(node);
+
     int balance_factor = getBalance(node);
-    
-    if (balance_factor > 1 && getBalance(node->left) >= 0) {
+
+    if (balance_factor > 1) {
+        if (getBalance(node->left) < 0) {
+            node->left = rotateLeft(node->left);
+        }
         return rotateRight(node);
     }
-    
-    if (balance_factor < -1 && getBalance(node->right) <= 0) {
+
+    if (balance_factor < -1) {
+        if (getBalance(node->right) > 0) {
+            node->right = rotateRight(node->right);
+        }
         return rotateLeft(node);
     }
-    
-    if (balance_factor > 1 && getBalance(node->left) < 0) {
-        node->left = rotateLeft(node->left);
-        return rotateRight(node);
-    }
-    
-    if (balance_factor < -1 && getBalance(node->right) > 0) {
-        node->right = rotateRight(node->right);
-        return rotateLeft(node);
-    }
-    
+
     return node;
 }
